@@ -1,0 +1,8 @@
+bin
+bin/
+build/
+devel/
+.catkin_tools/
+.catkin_workspace
+*.swp
+__pycache__/
