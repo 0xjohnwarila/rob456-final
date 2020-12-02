@@ -27,29 +27,23 @@ def neighbors_explored(map_array, coordinates):
     """
     unoccupied = np.empty((0, 2), int)
     # Dumb set of if-else conditions to account for all four corners
-    if coordinates[0] <= 0 and coordinates[1] <= 0:
-        y = np.arange(coordinates[0], coordinates[0] + 2)
-        x = np.arange(coordinates[1], coordinates[1] + 2)
-    elif coordinates[0] >= np.size(map_array, axis=0) - 1 and coordinates[1] <= 0:
+    if coordinates[0] + 2 > np.size(map_array, axis=0) - 1:
         y = np.arange(coordinates[0] - 1, coordinates[0] + 1)
-        x = np.arange(coordinates[1], coordinates[1] + 2)
-    elif coordinates[0] >= np.size(map_array, axis=0) - 1 and coordinates[1] >= np.size(map_array, axis=1) - 1:
-        y = np.arange(coordinates[0] - 1, coordinates[0] + 1)
-        x = np.arange(coordinates[1] - 1, coordinates[1] + 1)
-    elif coordinates[0] <= 0 and coordinates[1] >= np.size(map_array, axis=1) - 1:
+    elif coordinates[0] - 1 < 0:
         y = np.arange(coordinates[0], coordinates[0] + 2)
-        x = np.arange(coordinates[1] - 1, coordinates[1] + 1)
     else:
         y = np.arange(coordinates[0] - 1, coordinates[0] + 2)
+
+    if coordinates[1] + 2 > np.size(map_array, axis=1) - 1:
+        x = np.arange(coordinates[1] - 1, coordinates[1] + 1)
+    elif coordinates[1] - 1 < 0:
+        x = np.arange(coordinates[1], coordinates[1] + 2)
+    else:
         x = np.arange(coordinates[1] - 1, coordinates[1] + 2)
     # Double for loop to iterate through all the pixels in the area of interest
     for num in y:
         for num2 in x:
             if num == coordinates[0] and num2 == coordinates[1]:
-                continue
-            elif num2 < 30 or num2 > 353:
-                continue
-            elif num < 70 or num > 280:
                 continue
             else:
                 if map_array[num, num2] > 1:
