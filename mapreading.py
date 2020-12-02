@@ -27,16 +27,16 @@ def neighbors_explored(map_array, coordinates):
     """
     unoccupied = np.empty((0, 2), int)
     # Dumb set of if-else conditions to account for all four corners
-    if coordinates[0] == 0 and coordinates[1] == 0:
+    if coordinates[0] <= 0 and coordinates[1] <= 0:
         y = np.arange(coordinates[0], coordinates[0] + 2)
         x = np.arange(coordinates[1], coordinates[1] + 2)
-    elif coordinates[0] == np.size(map_array, axis=0) - 1 and coordinates[1] == 0:
+    elif coordinates[0] >= np.size(map_array, axis=0) - 1 and coordinates[1] <= 0:
         y = np.arange(coordinates[0] - 1, coordinates[0] + 1)
         x = np.arange(coordinates[1], coordinates[1] + 2)
-    elif coordinates[0] == np.size(map_array, axis=0) - 1 and coordinates[1] == np.size(map_array, axis=1) - 1:
+    elif coordinates[0] >= np.size(map_array, axis=0) - 1 and coordinates[1] >= np.size(map_array, axis=1) - 1:
         y = np.arange(coordinates[0] - 1, coordinates[0] + 1)
         x = np.arange(coordinates[1] - 1, coordinates[1] + 1)
-    elif coordinates[0] == 0 and coordinates[1] == np.size(map_array, axis=1) - 1:
+    elif coordinates[0] <= 0 and coordinates[1] >= np.size(map_array, axis=1) - 1:
         y = np.arange(coordinates[0], coordinates[0] + 2)
         x = np.arange(coordinates[1] - 1, coordinates[1] + 1)
     else:
@@ -46,6 +46,10 @@ def neighbors_explored(map_array, coordinates):
     for num in y:
         for num2 in x:
             if num == coordinates[0] and num2 == coordinates[1]:
+                continue
+            elif num2 < 30 or num2 > 353:
+                continue
+            elif num < 70 or num > 280:
                 continue
             else:
                 if map_array[num, num2] > 1:
@@ -65,5 +69,9 @@ if __name__ == '__main__':
     test3 = neighbors_explored(img, test_points[2, :])
     test4 = neighbors_explored(img, test_points[3, :])
     test5 = neighbors_explored(img, test_points[4, :])
+    print test1
+    print test2
+    print test3
+    print test4
     plt.imshow(img)
     plt.show()

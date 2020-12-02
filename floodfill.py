@@ -53,6 +53,14 @@ if __name__ == '__main__':
     img = mapreading.threshold('murrmatt.pgm')
 
     new_img = floodfill(img, (115, 90))
-    print new_img
+
+    y = np.size(img, axis=0)
+    x = np.size(img, axis=1)
+    img = np.full([y, x], np.inf)
+    for pixel in new_img:
+        print new_img[pixel]
+        print pixel
+        img[pixel[0]][pixel[1]] = new_img[pixel]
+
     plt.imshow(img)
     plt.show()
