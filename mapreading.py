@@ -21,11 +21,11 @@ def threshold(image):
 def neighbors_explored(map_array, coordinates):
     """
     Takes in a thresholded map array and a set of pixel coordinates and returns a list of coordinates mapping to the
-    unexplored areas in the 8 pixels surrounding the query point
+    unoccupied areas in the 8 pixels surrounding the query point
     :param coordinates: numpy array of coordinates in (y, x) form (because numpy likes to reverse axes for some reason)
-    :return: list of y, x coordinates representing unexplored pixels
+    :return: list of y, x coordinates representing unoccupied pixels
     """
-    unexplored = np.empty((0, 2), int)
+    unoccupied = np.empty((0, 2), int)
     # Dumb set of if-else conditions to account for all four corners
     if coordinates[0] == 0 and coordinates[1] == 0:
         y = np.arange(coordinates[0], coordinates[0] + 2)
@@ -45,9 +45,12 @@ def neighbors_explored(map_array, coordinates):
     # Double for loop to iterate through all the pixels in the area of interest
     for num in y:
         for num2 in x:
-            if map_array[num, num2] > 255:
-                unexplored = np.append(unexplored, np.array([[num, num2]]), axis=0)
-    return unexplored
+            if num == coordinates[0] and num2 == coordinates[1]:
+                continue
+            else:
+                if map_array[num, num2] > 1:
+                    unoccupied = np.append(unoccupied, np.array([[num, num2]]), axis=0)
+    return unoccupied
 
 
 if __name__ == '__main__':
