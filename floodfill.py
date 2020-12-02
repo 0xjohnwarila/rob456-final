@@ -3,41 +3,21 @@ import matplotlib.pyplot as plt
 import mapreading  
 import heapq as hq
 
-def get_neighbors(m, target):
-    """
-    param: m - map
-    param: target - (y, x)
-    return: array of neighbor points
-    """
-    ret = []
-
-    ys = np.arange(target[0] - 1, target[0] + 2)
-    xs = np.arange(target[1] - 1, target[1] + 2)
-    
-    for y in ys:
-        for x in xs:
-            if (y, x) == target:
-                continue
-            if m[y, x] > 1:
-                ret.append((y, x))
-    return ret
-
 def floodfill(m, target):
-    """
-    param: m - map
-    param: target - (y, x)
-    return: flood filled map
-    """
     q = []
     points = {}
+    closed = set()
     hq.heappush(q, (0, target))
     points[target] = 0
 
     while q:
         curr = hq.heappop(q)
+        closed.add(curr[1])
         neighbors = mapreading.neighbors_explored(m, curr[1])
         for n in neighbors:
             neighbor = (n[0], n[1])
+            if neighbor in closed:
+                continue
             new_priority = curr[0] + 1
             if points.has_key(neighbor):
                 if points[neighbor] > new_priority:
@@ -58,8 +38,6 @@ if __name__ == '__main__':
     x = np.size(img, axis=1)
     img = np.full([y, x], np.inf)
     for pixel in new_img:
-        print new_img[pixel]
-        print pixel
         img[pixel[0]][pixel[1]] = new_img[pixel]
 
     plt.imshow(img)
