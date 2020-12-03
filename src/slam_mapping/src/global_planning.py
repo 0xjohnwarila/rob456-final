@@ -9,6 +9,10 @@ from tf.transformations import euler_from_quaternion
 from geometry_msgs.mgs import Twist
 
 
+import astar
+import mapreading
+
+
 class GlobalPlanner:
     """
     Driver for global exploration and planning, with A* path finding.
@@ -156,6 +160,14 @@ class GlobalPlanner:
 
     def gmap_callback(self, gmap):
         pass
+
+    def path_plan(self, start, target):
+        s = self.convert_point_np(start)
+        t = self.convert_point_np(target)
+
+        points, parents, size = astar.astar(self.map_, s, t)
+
+        # Do stuff with the path, like get the waypoints
 
 if __name__ == '__main__':
     rospy.init_node('global_planner')
