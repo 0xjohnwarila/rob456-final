@@ -161,6 +161,14 @@ class GlobalPlanner:
     def gmap_callback(self, gmap):
         pass
 
+    def convert_point_np(point):
+        """
+        Convert a point from (x, y) to (y, x) or the other way.
+        :param: point: (x, y)
+        :returns: (y, x)
+        """
+        return (point[1], point[0])
+
     def path_plan(self, start, target):
         s = self.convert_point_np(start)
         t = self.convert_point_np(target)
