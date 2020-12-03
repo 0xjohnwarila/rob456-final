@@ -1,13 +1,18 @@
+#!/usr/bin/env python
+
 import rospy
+import numpy as np
 
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
+from tf.transformations import euler_from_quaternion
+from geometry_msgs.mgs import Twist
+
 
 class GlobalPlanner:
     """
     Driver for global exploration and planning, with A* path finding.
     """
-
     def __init__(self):
         """
         Initialize SLAM object's publishers, subscribers, and internal state
@@ -52,24 +57,25 @@ class GlobalPlanner:
 
         # (x, y, yaw)
         odom_ = None
-    
+
     def lidar_callback(self, msg):
         """
         Callback for the LIDAR subscriber.
-        Reads in msg and tries to continue on to the currently selected waypoint
+        Reads in msg and tries to continue on to the currently selected
+        waypoint.
         :param: msg: lidar msg
         :returns: None
         """
 
         # Check if we have a waypoint to navigate to
-        if self.curr_waypoint_ == None:
+        if self.curr_waypoint_ is None:
             # Get the next waypoint
             self.get_new_waypoint()
 
         command = Twist()
 
-        # Fill in the fields.  Field values are unspecified 
-        # until they are actually assigned. The Twist message 
+        # Fill in the fields.  Field values are unspecified
+        # until they are actually assigned. The Twist message
         # holds linear and angular velocities.
         command.linear.x = 0.0
         command.linear.y = 0.0
@@ -132,14 +138,14 @@ class GlobalPlanner:
                     command.linear.x = 0
                     command.angular.z = -1
             current_laser_theta = current_laser_theta + angle_incr
-    
+
     pub.publish(command)
-    
+
     def odom_callback(self, msg):
         """
         Callback for the odom subscriber.
         Reads msgs and saves to the internal state.
-        
+
         :param: msg: Odometry message
         "returns: None
         """
