@@ -4,7 +4,7 @@ import rospy
 import numpy as np
 
 from sensor_msgs.msg import LaserScan
-from nav_msgs.msg import Odometry
+from nav_msgs.msg import Odometry, OccupancyGrid
 from tf.transformations import euler_from_quaternion
 from geometry_msgs.mgs import Twist
 
@@ -25,7 +25,7 @@ class GlobalPlanner:
 
         # SLAM map subscriber
         self.gmap_sub_ = rospy.Subscriber(
-            'gmap',
+            '/map',
             OccupancyGrid,
             self.gmap_callback
         )
