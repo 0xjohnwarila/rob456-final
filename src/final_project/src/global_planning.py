@@ -1,12 +1,14 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 import rospy
 import numpy as np
 
 from sensor_msgs.msg import LaserScan
+from visualization_msgs.msg import Marker
 from nav_msgs.msg import Odometry, OccupancyGrid
 from tf.transformations import euler_from_quaternion
-from geometry_msgs.mgs import Twist
+from geometry_msgs.msg import Twist
+from points_to_rviz import draw_points
 
 
 import astar
@@ -43,24 +45,27 @@ class GlobalPlanner:
         )
 
         # Setup Publishers
+        self.viz_pub_ = rospy.Publisher('/marker', Marker, queue_size=2)
 
         # Commanded Velocity Publisher
-        self.twist_pub_ = rospy.Publisher('/cmd_vel', Twist, queuesize=10)
+        #self.twist_pub_ = rospy.Publisher('/cmd_vel', Twist, queuesize=10)
 
         # Setup Internal State
-        map_ = {}
 
         # [(x, y)]
-        waypoints_ = []
+        self.waypoints_ = []
 
         # (x, y)
-        curr_waypoint_ = None
+        self.curr_waypoint_ = None
 
         # (x, y)
-        target_ = None
+        self.target_ = (188, 174)
 
-        # (x, y, yaw)
-        odom_ = None
+        # (x, y, yaw) in meters
+        self.odom_ = None
+
+        # (x, y) in map space
+        self.coords_ = (90, 115)
 
     def lidar_callback(self, msg):
         """
@@ -76,6 +81,7 @@ class GlobalPlanner:
             # Get the next waypoint
             self.get_new_waypoint()
 
+        """
         command = Twist()
 
         # Fill in the fields.  Field values are unspecified
@@ -143,7 +149,8 @@ class GlobalPlanner:
                     command.angular.z = -1
             current_laser_theta = current_laser_theta + angle_incr
 
-    pub.publish(command)
+    #self.twist_pub_.publish(command)
+    """
 
     def odom_callback(self, msg):
         """
@@ -153,10 +160,15 @@ class GlobalPlanner:
         :param: msg: Odometry message
         "returns: None
         """
-        position = msg.pose.position
+        position = msg.pose.pose.position
         ori = msg.pose.pose.orientation
         (r, p, yaw) = euler_from_quaternion([ori.x, ori.y, ori.z, ori.w])
         self.odom_ = (position.x, position.y, yaw)
+        x = position.x * self.resolution_
+        y = position.y * self.resolution_
+
+        # this is broken somehow ~ no it is not, just testing
+        #self.coords_ = (int(x), int(y))
 
     def map_callback(self, msg):
         """
@@ -170,13 +182,13 @@ class GlobalPlanner:
         data = msg.data
         c = msg.info.width
         r = msg.info.height
-        resolution = msg.info.resolution
+        self.resolution_ = msg.info.resolution
 
-        data = np.reshape(data, (r, c))
+        data = np.flip(np.reshape(data, (r, c)), 0)
 
         self.map_ = mapreading.live_threshold(data)
 
-    def convert_point_np(point):
+    def convert_point_np(self, point):
         """
         Convert a point from (x, y) to (y, x) or the other way.
         :param: point: (x, y)
@@ -199,10 +211,24 @@ class GlobalPlanner:
         # Do stuff with the path, like get the waypoints
         path = []
         child = t
+        i = 0
         while child != s:
-            # maybe only select every n path point?
-            path.append(child)
-            child = parents(child)
+            if i % 10 == 0:
+                path.append(child)
+            child = parents[child]
+            i += 1
+
+        print len(path)
+        # display with rviz
+        for i, point in enumerate(path):
+            tmp = self.convert_point_np(point)
+            tmp = (tmp[0] * self.resolution_, tmp[1] * self.resolution_)
+            path[i] = tmp
+
+        print "drawing points"
+        print path
+        draw_points(path, self.viz_pub_)
+        self.waypoints_ = path
 
 
     def get_new_waypoint(self):
@@ -211,11 +237,11 @@ class GlobalPlanner:
         :returns: (x, y)
         """
 
-        if len(self.waypoints) == 0:
+        if len(self.waypoints_) == 0:
             # If there are no remaining waypoints, get some new ones
-            path_plan(self.loc_, self.target_)
+            self.path_plan(self.coords_, self.target_)
 
-        return waypoints.pop(0)
+        return self.waypoints_.pop(0)
 
 if __name__ == '__main__':
     rospy.init_node('global_planner')

@@ -5,4 +5,5 @@
     <node pkg="tf" type="static_transform_publisher" name="map_odom_tf" args="0 0 0 0 0 0 map odom 100"/>
     <node pkg="map_server" type="map_server" name="map_server" args="/home/jwarila/Programming/rob456/intelligent-robots/catkin_ws/warilaj.yaml"/>
     <node pkg="rviz" type="rviz" name="rviz"/>
+    <node pkg="final_project" type="global_planning.py" name="global_planning" output="screen" />
 </launch>

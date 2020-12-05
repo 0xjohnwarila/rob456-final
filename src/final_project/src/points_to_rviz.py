@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 import rospy
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
@@ -18,7 +18,6 @@ def draw_points(points, pub):
     # uint8 POINTS=8
     msg.type = 8
     # Disappear after 1sec. Comment this line out to make them persist indefinitely
-    msg.lifetime = rospy.rostime.Duration(1, 0)
     # Set marker visual properties
     msg.color.b = 1.0
     msg.color.a = 1.0
