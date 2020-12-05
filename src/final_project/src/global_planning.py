@@ -159,7 +159,22 @@ class GlobalPlanner:
         self.odom_ = (position.x, position.y, yaw)
 
     def map_callback(self, msg):
-        pass
+        """
+        Callback for the mab subcriber.
+        Gets an occupancy grid and converts it to a usable grid map.
+
+        :param: msg: Occupancy Grid
+        :returns: None
+        """
+        # data: int8[] in row-major order
+        data = msg.data
+        c = msg.info.width
+        r = msg.info.height
+        resolution = msg.info.resolution
+
+        data = np.reshape(data, (r, c))
+
+        self.map_ = mapreading.live_threshold(data)
 
     def convert_point_np(point):
         """
@@ -185,6 +200,7 @@ class GlobalPlanner:
         path = []
         child = t
         while child != s:
+            # maybe only select every n path point?
             path.append(child)
             child = parents(child)
 

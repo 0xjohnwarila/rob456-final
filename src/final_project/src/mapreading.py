@@ -17,6 +17,15 @@ def threshold(image):
     new_img[img == 254] = 255
     return new_img
 
+def live_threshold(data):
+    y = np.size(data, axis=0)
+    x = np.size(data, axis=1)
+    new_img = np.full([y, x], np.inf)
+    new_img[data < 30] = 255
+    new_img[data == -1] = 0
+    return new_img
+    
+
 
 def neighbors_explored(map_array, coordinates):
     """
