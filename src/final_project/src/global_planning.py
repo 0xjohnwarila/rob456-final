@@ -27,7 +27,7 @@ class GlobalPlanner:
         self.gmap_sub_ = rospy.Subscriber(
             '/map',
             OccupancyGrid,
-            self.gmap_callback
+            self.map_callback
         )
         # LIDAR scan
         self.lidar_sub_ = rospy.Subscriber(
@@ -158,7 +158,7 @@ class GlobalPlanner:
         (r, p, yaw) = euler_from_quaternion([ori.x, ori.y, ori.z, ori.w])
         self.odom_ = (position.x, position.y, yaw)
 
-    def gmap_callback(self, gmap):
+    def map_callback(self, msg):
         pass
 
     def convert_point_np(point):
@@ -170,12 +170,36 @@ class GlobalPlanner:
         return (point[1], point[0])
 
     def path_plan(self, start, target):
+        """
+        Plan a new path with A* from start to target
+        :param: start: (x,y), target: (x,y)
+        :returns: None
+        """
+        # Make sure to convert to np style first
         s = self.convert_point_np(start)
         t = self.convert_point_np(target)
 
         points, parents, size = astar.astar(self.map_, s, t)
 
         # Do stuff with the path, like get the waypoints
+        path = []
+        child = t
+        while child != s:
+            path.append(child)
+            child = parents(child)
+
+
+    def get_new_waypoint(self):
+        """
+        Retrieve the next way point. If there are no waypoints left, get new ones.
+        :returns: (x, y)
+        """
+
+        if len(self.waypoints) == 0:
+            # If there are no remaining waypoints, get some new ones
+            path_plan(self.loc_, self.target_)
+
+        return waypoints.pop(0)
 
 if __name__ == '__main__':
     rospy.init_node('global_planner')
