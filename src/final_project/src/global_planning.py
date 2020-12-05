@@ -48,7 +48,7 @@ class GlobalPlanner:
         self.viz_pub_ = rospy.Publisher('/marker', Marker, queue_size=2)
 
         # Commanded Velocity Publisher
-        #self.twist_pub_ = rospy.Publisher('/cmd_vel', Twist, queuesize=10)
+        self.twist_pub_ = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
 
         # Setup Internal State
 
@@ -81,7 +81,6 @@ class GlobalPlanner:
             # Get the next waypoint
             self.get_new_waypoint()
 
-        """
         command = Twist()
 
         # Fill in the fields.  Field values are unspecified
@@ -134,7 +133,7 @@ class GlobalPlanner:
             command.linear.x = 0.1
             command.angular.z = angle * .3
         # Stop the robot when position is reached
-        if total_distance < 0.1:
+        if total_distance < 0.2:
             command.linear.x = 0
             command.linear.z = 0
             self.curr_waypoint_ = None
@@ -156,8 +155,7 @@ class GlobalPlanner:
                     command.angular.z = -1
             current_laser_theta = current_laser_theta + angle_increment
 
-    #self.twist_pub_.publish(command)
-    """
+        self.twist_pub_.publish(command)
 
     def odom_callback(self, msg):
         """
@@ -175,7 +173,7 @@ class GlobalPlanner:
         y = position.y * self.resolution_
 
         # this is broken somehow ~ no it is not, just testing
-        #self.coords_ = (int(x), int(y))
+        # self.coords_ = (int(x), int(y))
 
     def map_callback(self, msg):
         """
@@ -249,7 +247,6 @@ class GlobalPlanner:
         draw_points(path, self.viz_pub_)
         self.waypoints_ = path
 
-
     def get_new_waypoint(self):
         """
         Retrieve the next way point. If there are no waypoints left, get new ones.
@@ -259,8 +256,10 @@ class GlobalPlanner:
         if len(self.waypoints_) == 0:
             # If there are no remaining waypoints, get some new ones
             self.path_plan(self.coords_, self.target_)
+        self.curr_waypoint_ = self.waypoints_.pop(0)
 
-        return self.waypoints_.pop(0)
+        return self.curr_waypoint_
+
 
 if __name__ == '__main__':
     rospy.init_node('global_planner')
