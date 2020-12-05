@@ -222,11 +222,15 @@ class GlobalPlanner:
         # display with rviz
         for i, point in enumerate(path):
             tmp = self.convert_point_np(point)
-            tmp = (tmp[0] * self.resolution_, tmp[1] * self.resolution_)
+            tmp = (tmp[0] * self.resolution_ - 10, -1*(tmp[1] * self.resolution_ - 10))
             path[i] = tmp
 
         print "drawing points"
-        print path
+        print start[0]*self.resolution_, start[1]*self.resolution_
+        print target[0]*self.resolution_, target[1]*self.resolution_
+        draw_points([(start[0]*self.resolution_, start[1]*self.resolution_)], self.viz_pub_)
+        draw_points([(target[0]*self.resolution_, target[1]*self.resolution_)], self.viz_pub_)
+        draw_points([(0,0)], self.viz_pub_)
         draw_points(path, self.viz_pub_)
         self.waypoints_ = path
 
