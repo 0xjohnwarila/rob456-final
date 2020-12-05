@@ -116,7 +116,14 @@ class GlobalPlanner:
         #
         # ~ Pretty sure it is to maintain the same function signature as the C
         #   method atan()  - John
+        # Still hate it - Matt
         angle = np.arctan2(y_dist, x_dist) - self.odom_[2]
+
+        # Accounts for situations where the angle reads positive but really should be negative (or vice versa)
+        if angle > np.pi:
+            angle = angle - 2 * np.pi
+        elif angle < -np.pi:
+            angle = angle + 2 * np.pi
 
         # If the target point is behind the robot then it will only turn, once
         # it's <90 degrees from the front it will start driving forward
@@ -147,7 +154,7 @@ class GlobalPlanner:
                 elif 0 <= i < 0 + half_angle and command.linear.x > 0:
                     command.linear.x = 0
                     command.angular.z = -1
-            current_laser_theta = current_laser_theta + angle_incr
+            current_laser_theta = current_laser_theta + angle_increment
 
     #self.twist_pub_.publish(command)
     """
@@ -196,6 +203,18 @@ class GlobalPlanner:
         """
         return (point[1], point[0])
 
+    def convert_point_rviz(self, point):
+        """
+        Converts points from numpy array form to rviz coordinates with (0, 0) at the center of the map
+        :param point: (y, x) coordinate
+        :return: (x, y) coordinate shifted and flipped along the y axis
+        """
+        x_shift = np.size(self.map_, axis=1) / 2 - 1
+        y_shift = np.size(self.map_, axis=0) / 2 - 1
+        new_x = point[1] - x_shift
+        new_y = point[0] - y_shift
+        return (new_x, -new_y)
+
     def path_plan(self, start, target):
         """
         Plan a new path with A* from start to target
@@ -221,16 +240,12 @@ class GlobalPlanner:
         print len(path)
         # display with rviz
         for i, point in enumerate(path):
-            tmp = self.convert_point_np(point)
-            tmp = (tmp[0] * self.resolution_ - 10, -1*(tmp[1] * self.resolution_ - 10))
+            tmp = self.convert_point_rviz(point)
+            tmp = (tmp[0] * self.resolution_, tmp[1] * self.resolution_)
             path[i] = tmp
 
         print "drawing points"
-        print start[0]*self.resolution_, start[1]*self.resolution_
-        print target[0]*self.resolution_, target[1]*self.resolution_
-        draw_points([(start[0]*self.resolution_, start[1]*self.resolution_)], self.viz_pub_)
-        draw_points([(target[0]*self.resolution_, target[1]*self.resolution_)], self.viz_pub_)
-        draw_points([(0,0)], self.viz_pub_)
+        print path
         draw_points(path, self.viz_pub_)
         self.waypoints_ = path
 
