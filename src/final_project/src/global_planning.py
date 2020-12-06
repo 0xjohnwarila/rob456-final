@@ -140,13 +140,13 @@ class GlobalPlanner:
 
         current_laser_theta = min_angle
         for i, scan in enumerate(distances):
-            half_angle = 25
+            half_angle = 45
             # This if statement basically checks to see if we're close to a
             # wall, then checks if that wall is within a 50 degree angle in
             # front of us and we're moving towards it. If all conditions are
             # satisfied then we do a hard left or right depending on whether
             # the wall is closer to the left or right front
-            if scan < 0.5:
+            if scan < 0.25:
                 if 360 - half_angle < i < 360 and command.linear.x > 0:
                     command.linear.x = 0
                     command.angular.z = 1
