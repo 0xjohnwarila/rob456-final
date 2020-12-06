@@ -59,13 +59,13 @@ class GlobalPlanner:
         self.curr_waypoint_ = None
 
         # (x, y)
-        self.target_ = (188, 174)
+        self.target_ = (175, 300)
 
         # (x, y, yaw) in meters
         self.odom_ = None
 
         # (x, y) in map space
-        self.coords_ = (90, 115)
+        self.coords_ = None
 
     def lidar_callback(self, msg):
         """
@@ -169,8 +169,8 @@ class GlobalPlanner:
         ori = msg.pose.pose.orientation
         (r, p, yaw) = euler_from_quaternion([ori.x, ori.y, ori.z, ori.w])
         self.odom_ = (position.x, position.y, yaw)
-        x = position.x * self.resolution_
-        y = position.y * self.resolution_
+
+        self.coords_ = self.rviz_to_np((position.x, position.y))
 
         # this is broken somehow ~ no it is not, just testing
         # self.coords_ = (int(x), int(y))
@@ -201,17 +201,29 @@ class GlobalPlanner:
         """
         return (point[1], point[0])
 
-    def convert_point_rviz(self, point):
+    def np_to_rviz(self, point):
         """
         Converts points from numpy array form to rviz coordinates with (0, 0) at the center of the map
-        :param point: (y, x) coordinate
+        :param point: (r, c) coordinate
         :return: (x, y) coordinate shifted and flipped along the y axis
         """
         x_shift = np.size(self.map_, axis=1) / 2 - 1
         y_shift = np.size(self.map_, axis=0) / 2 - 1
-        new_x = point[1] - x_shift
-        new_y = point[0] - y_shift
+        new_x = (point[1] - x_shift) * self.resolution_
+        new_y = (point[0] - y_shift) * self.resolution_
         return (new_x, -new_y)
+
+    def rviz_to_np(self, point):
+        """
+        Converts point from rviz frame to numpy frame (r, c), with (0, 0) at the top left of the map
+        :param point: rviz coordinate (x, y)
+        :return: np coordinate (r, c)
+        """
+        r_shift = np.size(self.map_, axis=0) / 2 - 1
+        c_shift = np.size(self.map_, axis=1) / 2 - 1
+        new_r = -point[1] / self.resolution_ + r_shift
+        new_c = point[0] / self.resolution_ + c_shift
+        return (int(new_r), int(new_c))
 
     def path_plan(self, start, target):
         """
@@ -219,9 +231,9 @@ class GlobalPlanner:
         :param: start: (x,y), target: (x,y)
         :returns: None
         """
-        # Make sure to convert to np style first
-        s = self.convert_point_np(start)
-        t = self.convert_point_np(target)
+        # I really don't get it but apparently these are reversed? At least it works when I switch them
+        t = start
+        s = target
 
         points, parents, size = astar.astar(self.map_, s, t)
 
@@ -238,8 +250,7 @@ class GlobalPlanner:
         print len(path)
         # display with rviz
         for i, point in enumerate(path):
-            tmp = self.convert_point_rviz(point)
-            tmp = (tmp[0] * self.resolution_, tmp[1] * self.resolution_)
+            tmp = self.np_to_rviz(point)
             path[i] = tmp
 
         print "drawing points"
