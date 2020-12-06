@@ -62,7 +62,7 @@ def neighbors_explored(map_array, coordinates):
 
 def get_boundary_pixels(map_array):
     """
-    This runs through the map, finds unoccupied pixels that have two or more unexplored neighbors, then returns a list
+    This runs through the map, finds unoccupied pixels that have three or more unexplored neighbors, then returns a list
     containing those boundary pixels (PS: I hate the way I wrote this function)
     :param map_array: Thresholded numpy array representing SLAM map
     :return: list of boundary pixels
@@ -88,7 +88,7 @@ def get_boundary_pixels(map_array):
                     for num2 in x:
                         if map_array[num, num2] > 255:
                             unexplored += 1
-                if unexplored > 1:
+                if unexplored > 2:
                     pixel_list = np.append(pixel_list, np.array([[r, c]]), axis=0)
     return pixel_list
 

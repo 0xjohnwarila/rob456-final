@@ -59,7 +59,7 @@ class GlobalPlanner:
         self.curr_waypoint_ = None
 
         # (x, y)
-        self.target_ = (175, 300)
+        self.target_ = None
 
         # (x, y, yaw) in meters
         self.odom_ = None
@@ -265,11 +265,18 @@ class GlobalPlanner:
         """
 
         if len(self.waypoints_) == 0:
+            self.get_new_target()
             # If there are no remaining waypoints, get some new ones
             self.path_plan(self.coords_, self.target_)
         self.curr_waypoint_ = self.waypoints_.pop(0)
 
         return self.curr_waypoint_
+
+    def get_new_target(self):
+        boundary = mapreading.get_boundary_pixels(self.map_)
+        distance = np.abs(boundary[:, 0] - self.coords_[0]) + np.abs(boundary[:, 1] - self.coords_[1])
+        self.target_ = (boundary[np.argmin(distance), 0], boundary[np.argmin(distance), 1])
+        return self.target_
 
 
 if __name__ == '__main__':
