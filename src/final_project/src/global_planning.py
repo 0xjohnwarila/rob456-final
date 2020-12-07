@@ -132,20 +132,21 @@ class GlobalPlanner:
         # it's <90 degrees from the front it will start driving forward
         if angle > np.pi / 2 or angle < - np.pi / 2:
             command.linear.x = 0
-            command.angular.z = angle * .3
+            command.angular.z = angle * .5
         else:
             command.linear.x = 0.1
-            command.angular.z = angle * .3
+            command.angular.z = angle * .5
         # Stop the robot when position is reached
-        if total_distance < 0.2:
+        if total_distance < .7:
             command.linear.x = 0
             command.linear.z = 0
             self.redirect_ = 0
             self.curr_waypoint_ = None
+            self.wait_ = 4
 
         current_laser_theta = min_angle
         for i, scan in enumerate(distances):
-            half_angle = 45
+            half_angle = 60
             # This if statement basically checks to see if we're close to a
             # wall, then checks if that wall is within a 50 degree angle in
             # front of us and we're moving towards it. If all conditions are
@@ -153,10 +154,12 @@ class GlobalPlanner:
             # the wall is closer to the left or right front
             if scan < 0.25:
                 if 360 - half_angle < i < 360 and command.linear.x > 0:
+                    print "***********DIVERT**********"
                     command.linear.x = 0
                     command.angular.z = 10
                     self.redirect_ += 1
                 elif 0 <= i < 0 + half_angle and command.linear.x > 0:
+                    print "***********DIVERT**********"
                     command.linear.x = 0
                     command.angular.z = -10
                     self.redirect_ += 1
@@ -165,6 +168,11 @@ class GlobalPlanner:
         if self.redirect_ > 10:
             self.waypoints_ = []
             self.redirect_ = 0
+
+        if self.wait_ > 0:
+            self.wait_ -= 1
+            command.linear.x = 0
+            command.angular.z = 0
 
         self.twist_pub_.publish(command)
 
@@ -183,7 +191,6 @@ class GlobalPlanner:
 
         self.coords_ = self.rviz_to_np((position.x, position.y))
 
-        self.coords_ = (int(x), int(y))
 
     def map_callback(self, msg):
         """
@@ -202,6 +209,8 @@ class GlobalPlanner:
         data = np.flip(np.reshape(data, (r, c)), 0)
 
         self.map_ = mapreading.live_threshold(data)
+        # Trigger replan on new map
+        self.waypoints_ = []
 
     def convert_point_np(self, point):
         """
@@ -289,7 +298,11 @@ class GlobalPlanner:
         """
         boundary = mapreading.get_boundary_pixels(self.map_)
         distance = np.abs(boundary[:, 0] - self.coords_[0]) + np.abs(boundary[:, 1] - self.coords_[1])
-        self.target_ = (boundary[np.argmax(distance), 0], boundary[np.argmax(distance), 1])
+        # Get the first target that is more than 50 away
+        distance = np.sort(distance)
+        for i, dist in enumerate(distance):
+            if dist > 50:
+                self.target_ = (boundary[i, 0], boundary[i, 1])
         return self.target_
 
 
