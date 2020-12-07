@@ -59,13 +59,16 @@ class GlobalPlanner:
         self.curr_waypoint_ = None
 
         # (x, y)
-        self.target_ = (188, 174)
+        self.target_ = None
 
         # (x, y, yaw) in meters
         self.odom_ = None
 
         # (x, y) in map space
-        self.coords_ = (90, 115)
+        self.coords_ = None
+
+        # Counter for number of times obstacle avoidance is triggered (>10 triggers replan)
+        self.redirect_ = 0
 
     def lidar_callback(self, msg):
         """
@@ -137,24 +140,31 @@ class GlobalPlanner:
         if total_distance < 0.2:
             command.linear.x = 0
             command.linear.z = 0
+            self.redirect_ = 0
             self.curr_waypoint_ = None
 
         current_laser_theta = min_angle
         for i, scan in enumerate(distances):
-            half_angle = 25
+            half_angle = 45
             # This if statement basically checks to see if we're close to a
             # wall, then checks if that wall is within a 50 degree angle in
             # front of us and we're moving towards it. If all conditions are
             # satisfied then we do a hard left or right depending on whether
             # the wall is closer to the left or right front
-            if scan < 0.5:
+            if scan < 0.25:
                 if 360 - half_angle < i < 360 and command.linear.x > 0:
                     command.linear.x = 0
-                    command.angular.z = 1
+                    command.angular.z = 10
+                    self.redirect_ += 1
                 elif 0 <= i < 0 + half_angle and command.linear.x > 0:
                     command.linear.x = 0
-                    command.angular.z = -1
+                    command.angular.z = -10
+                    self.redirect_ += 1
             current_laser_theta = current_laser_theta + angle_increment
+
+        if self.redirect_ > 10:
+            self.waypoints_ = []
+            self.redirect_ = 0
 
         self.twist_pub_.publish(command)
 
@@ -170,8 +180,8 @@ class GlobalPlanner:
         ori = msg.pose.pose.orientation
         (r, p, yaw) = euler_from_quaternion([ori.x, ori.y, ori.z, ori.w])
         self.odom_ = (position.x, position.y, yaw)
-        x = position.x * self.resolution_
-        y = position.y * self.resolution_
+
+        self.coords_ = self.rviz_to_np((position.x, position.y))
 
         self.coords_ = (int(x), int(y))
 
@@ -201,17 +211,29 @@ class GlobalPlanner:
         """
         return (point[1], point[0])
 
-    def convert_point_rviz(self, point):
+    def np_to_rviz(self, point):
         """
         Converts points from numpy array form to rviz coordinates with (0, 0) at the center of the map
-        :param point: (y, x) coordinate
+        :param point: (r, c) coordinate
         :return: (x, y) coordinate shifted and flipped along the y axis
         """
         x_shift = np.size(self.map_, axis=1) / 2 - 1
         y_shift = np.size(self.map_, axis=0) / 2 - 1
-        new_x = point[1] - x_shift
-        new_y = point[0] - y_shift
+        new_x = (point[1] - x_shift) * self.resolution_
+        new_y = (point[0] - y_shift) * self.resolution_
         return (new_x, -new_y)
+
+    def rviz_to_np(self, point):
+        """
+        Converts point from rviz frame to numpy frame (r, c), with (0, 0) at the top left of the map
+        :param point: rviz coordinate (x, y)
+        :return: np coordinate (r, c)
+        """
+        r_shift = np.size(self.map_, axis=0) / 2 - 1
+        c_shift = np.size(self.map_, axis=1) / 2 - 1
+        new_r = -point[1] / self.resolution_ + r_shift
+        new_c = point[0] / self.resolution_ + c_shift
+        return (int(new_r), int(new_c))
 
     def path_plan(self, start, target):
         """
@@ -219,9 +241,9 @@ class GlobalPlanner:
         :param: start: (x,y), target: (x,y)
         :returns: None
         """
-        # Make sure to convert to np style first
-        s = self.convert_point_np(start)
-        t = self.convert_point_np(target)
+        # I really don't get it but apparently these are reversed? At least it works when I switch them
+        t = start
+        s = target
 
         points, parents, size = astar.astar(self.map_, s, t)
 
@@ -238,8 +260,7 @@ class GlobalPlanner:
         print len(path)
         # display with rviz
         for i, point in enumerate(path):
-            tmp = self.convert_point_rviz(point)
-            tmp = (tmp[0] * self.resolution_, tmp[1] * self.resolution_)
+            tmp = self.np_to_rviz(point)
             path[i] = tmp
 
         print "drawing points"
@@ -254,11 +275,22 @@ class GlobalPlanner:
         """
 
         if len(self.waypoints_) == 0:
+            self.get_new_target()
             # If there are no remaining waypoints, get some new ones
             self.path_plan(self.coords_, self.target_)
         self.curr_waypoint_ = self.waypoints_.pop(0)
 
         return self.curr_waypoint_
+
+    def get_new_target(self):
+        """
+        Gets list of boundary pixels and targets the one that's furthest from the current positions
+        :return: Target coordinates (r, c)
+        """
+        boundary = mapreading.get_boundary_pixels(self.map_)
+        distance = np.abs(boundary[:, 0] - self.coords_[0]) + np.abs(boundary[:, 1] - self.coords_[1])
+        self.target_ = (boundary[np.argmax(distance), 0], boundary[np.argmax(distance), 1])
+        return self.target_
 
 
 if __name__ == '__main__':
