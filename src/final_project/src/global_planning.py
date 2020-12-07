@@ -136,7 +136,7 @@ class GlobalPlanner:
             command.linear.x = 0.1
             command.angular.z = angle * .3
         # Stop the robot when position is reached
-        if total_distance < 0.2:
+        if total_distance < 0.3:
             command.linear.x = 0
             command.linear.z = 0
             self.redirect_ = 0

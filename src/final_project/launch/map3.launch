@@ -2,5 +2,8 @@
 	<include file="$(find final_project)/launch/willow_closed.launch"/>
 	<include file="$(find turtlebot3_slam)/launch/turtlebot3_gmapping.launch"/>
 	<node pkg="tf" type="static_transform_publisher" name="base_scan_tf" args="0 0 0 0 0 0 base_footprint base_scan 100"/>
+	<node pkg="tf" type="static_transform_publisher" name="map_odom_tf" args="0 0 0 0 0 0 map odom 100"/>
+    <node pkg="rviz" type="rviz" name="rviz"/>
+    <node pkg="final_project" type="global_planning.py" name="global_planning" output="screen" />
 </launch>
 
