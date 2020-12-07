@@ -118,7 +118,8 @@ class GlobalPlanner:
         # Still hate it - Matt
         angle = np.arctan2(y_dist, x_dist) - self.odom_[2]
 
-        # Accounts for situations where the angle reads positive but really should be negative (or vice versa)
+        # Accounts for situations where the angle reads positive but really
+        # should be negative (or vice versa)
         if angle > np.pi:
             angle = angle - 2 * np.pi
         elif angle < -np.pi:
@@ -172,8 +173,7 @@ class GlobalPlanner:
         x = position.x * self.resolution_
         y = position.y * self.resolution_
 
-        # this is broken somehow ~ no it is not, just testing
-        # self.coords_ = (int(x), int(y))
+        self.coords_ = (int(x), int(y))
 
     def map_callback(self, msg):
         """
