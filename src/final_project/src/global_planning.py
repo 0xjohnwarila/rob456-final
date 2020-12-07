@@ -139,12 +139,12 @@ class GlobalPlanner:
             command.linear.x = 0.2
             command.angular.z = angle * .5
         # Stop the robot when position is reached
-        if total_distance < .5:
+        if total_distance < 1.4:
             command.linear.x = 0
             command.linear.z = 0
             self.redirect_ = 0
-            self.curr_waypoint_ = None
-            self.wait_ = 4
+            self.get_new_waypoint()
+            self.wait_ = 0
 
         current_laser_theta = min_angle
         for i, scan in enumerate(distances):
@@ -157,12 +157,12 @@ class GlobalPlanner:
             if scan < 0.25:
                 if 360 - half_angle < i < 360 and command.linear.x > 0:
                     print "***********DIVERT**********"
-                    command.linear.x = 0.0
+                    command.linear.x = -0.1
                     command.angular.z = 5
                     self.redirect_ += 1
                 elif 0 <= i < 0 + half_angle and command.linear.x > 0:
                     print "***********DIVERT**********"
-                    command.linear.x = 0.0
+                    command.linear.x = -0.1
                     command.angular.z = -5
                     self.redirect_ += 1
             current_laser_theta = current_laser_theta + angle_increment
@@ -216,7 +216,9 @@ class GlobalPlanner:
         self.resolution_ = msg.info.resolution
 
         data = np.flip(np.reshape(data, (r, c)), 0)
+        
 
+        # using 3 for the half radius cuz I don't want to calc that rn
         self.map_ = mapreading.live_threshold(data)
         # Trigger replan on new map
         # self.waypoints_ = []
@@ -270,7 +272,7 @@ class GlobalPlanner:
         child = t
         i = 0
         while child != s:
-            if i % 10 == 0:
+            if i % 5 == 0:
                 path.append(child)
             child = parents[child]
             i += 1
@@ -322,7 +324,7 @@ class GlobalPlanner:
         distance = np.abs(boundary[:, 0] - self.coords_[0]) + np.abs(boundary[:, 1] - self.coords_[1])
         distance = np.sort(distance)
         for i, dist in enumerate(distance):
-            if boundary[i, 2] > 4 and dist > 50:
+            if boundary[i, 2] > 4 and dist > 20:
                 self.target_ = (boundary[i, 0], boundary[i, 1])
 
         return self.target_
