@@ -67,6 +67,9 @@ class GlobalPlanner:
         # (x, y) in map space
         self.coords_ = None
 
+        # Counter for number of times obstacle avoidance is triggered (>10 triggers replan)
+        self.redirect_ = 0
+
     def lidar_callback(self, msg):
         """
         Callback for the LIDAR subscriber.
@@ -136,6 +139,7 @@ class GlobalPlanner:
         if total_distance < 0.2:
             command.linear.x = 0
             command.linear.z = 0
+            self.redirect_ = 0
             self.curr_waypoint_ = None
 
         current_laser_theta = min_angle
@@ -149,11 +153,17 @@ class GlobalPlanner:
             if scan < 0.25:
                 if 360 - half_angle < i < 360 and command.linear.x > 0:
                     command.linear.x = 0
-                    command.angular.z = 1
+                    command.angular.z = 10
+                    self.redirect_ += 1
                 elif 0 <= i < 0 + half_angle and command.linear.x > 0:
                     command.linear.x = 0
-                    command.angular.z = -1
+                    command.angular.z = -10
+                    self.redirect_ += 1
             current_laser_theta = current_laser_theta + angle_increment
+
+        if self.redirect_ > 10:
+            self.waypoints_ = []
+            self.redirect_ = 0
 
         self.twist_pub_.publish(command)
 
@@ -273,9 +283,13 @@ class GlobalPlanner:
         return self.curr_waypoint_
 
     def get_new_target(self):
+        """
+        Gets list of boundary pixels and targets the one that's furthest from the current positions
+        :return: Target coordinates (r, c)
+        """
         boundary = mapreading.get_boundary_pixels(self.map_)
         distance = np.abs(boundary[:, 0] - self.coords_[0]) + np.abs(boundary[:, 1] - self.coords_[1])
-        self.target_ = (boundary[np.argmin(distance), 0], boundary[np.argmin(distance), 1])
+        self.target_ = (boundary[np.argmax(distance), 0], boundary[np.argmax(distance), 1])
         return self.target_
 
 
