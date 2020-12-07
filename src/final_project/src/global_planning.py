@@ -70,6 +70,8 @@ class GlobalPlanner:
         # Counter for number of times obstacle avoidance is triggered (>10 triggers replan)
         self.redirect_ = 0
 
+        self.count_ = 0
+
     def lidar_callback(self, msg):
         """
         Callback for the LIDAR subscriber.
@@ -78,7 +80,7 @@ class GlobalPlanner:
         :param: msg: lidar msg
         :returns: None
         """
-
+        self.count_ += 1
         # Check if we have a waypoint to navigate to
         if self.curr_waypoint_ is None:
             # Get the next waypoint
@@ -129,15 +131,15 @@ class GlobalPlanner:
             angle = angle + 2 * np.pi
 
         # If the target point is behind the robot then it will only turn, once
-        # it's <90 degrees from the front it will start driving forward
-        if angle > np.pi / 2 or angle < - np.pi / 2:
+        # it's <45 degrees from the front it will start driving forward
+        if angle > np.pi / 4 or angle < - np.pi / 4:
             command.linear.x = 0
-            command.angular.z = angle * .5
+            command.angular.z = angle * .9
         else:
-            command.linear.x = 0.1
+            command.linear.x = 0.2
             command.angular.z = angle * .5
         # Stop the robot when position is reached
-        if total_distance < .7:
+        if total_distance < .5:
             command.linear.x = 0
             command.linear.z = 0
             self.redirect_ = 0
@@ -155,24 +157,31 @@ class GlobalPlanner:
             if scan < 0.25:
                 if 360 - half_angle < i < 360 and command.linear.x > 0:
                     print "***********DIVERT**********"
-                    command.linear.x = 0
-                    command.angular.z = 10
+                    command.linear.x = 0.0
+                    command.angular.z = 5
                     self.redirect_ += 1
                 elif 0 <= i < 0 + half_angle and command.linear.x > 0:
                     print "***********DIVERT**********"
-                    command.linear.x = 0
-                    command.angular.z = -10
+                    command.linear.x = 0.0
+                    command.angular.z = -5
                     self.redirect_ += 1
             current_laser_theta = current_laser_theta + angle_increment
 
         if self.redirect_ > 10:
             self.waypoints_ = []
+            self.curr_waypoint_ = None
             self.redirect_ = 0
 
         if self.wait_ > 0:
             self.wait_ -= 1
             command.linear.x = 0
             command.angular.z = 0
+        
+        """
+        if self.count_ > 100:
+            self.waypoints_ = []
+            self.curr_waypoint_ = None
+        """
 
         self.twist_pub_.publish(command)
 
@@ -210,7 +219,7 @@ class GlobalPlanner:
 
         self.map_ = mapreading.live_threshold(data)
         # Trigger replan on new map
-        self.waypoints_ = []
+        # self.waypoints_ = []
 
     def convert_point_np(self, point):
         """
@@ -296,6 +305,9 @@ class GlobalPlanner:
         Gets list of boundary pixels and targets the one that's furthest from the current positions
         :return: Target coordinates (r, c)
         """
+
+        """
+        # Distance only target finding
         boundary = mapreading.get_boundary_pixels(self.map_)
         distance = np.abs(boundary[:, 0] - self.coords_[0]) + np.abs(boundary[:, 1] - self.coords_[1])
         # Get the first target that is more than 50 away
@@ -303,6 +315,16 @@ class GlobalPlanner:
         for i, dist in enumerate(distance):
             if dist > 50:
                 self.target_ = (boundary[i, 0], boundary[i, 1])
+        """
+
+        # Distance and density target finding
+        boundary = mapreading.get_weighted_boundary_pixels(self.map_)
+        distance = np.abs(boundary[:, 0] - self.coords_[0]) + np.abs(boundary[:, 1] - self.coords_[1])
+        distance = np.sort(distance)
+        for i, dist in enumerate(distance):
+            if boundary[i, 2] > 4 and dist > 50:
+                self.target_ = (boundary[i, 0], boundary[i, 1])
+
         return self.target_
 
 

@@ -93,6 +93,40 @@ def get_boundary_pixels(map_array):
                     pixel_list = np.append(pixel_list, np.array([[r, c]]), axis=0)
     return pixel_list
 
+def get_weighted_boundary_pixels(map_array):
+    """
+    Modified get_boundary_pixels that include a weight value with each pixel.
+    The weight is calculated by finding the density of unexplored pixels near
+    to the pixel. High density of unexplored pixels will have a high weight,
+    likewise for low density and low weights.
+    :param map_array: Thresholded numpy array representing SLAM map
+    :return: list of boundary pixels and their weights [r, c, weight]
+    """
+    pixel_list = np.empty((0, 3), int)
+    for r in np.arange(np.size(map_array, axis=0)):
+        for c in np.arange(np.size(map_array, axis=1)):
+            if map_array[r, c] == 255:
+                if r + 2 > np.size(map_array, axis=0) - 1:
+                    y = np.arange(r - 1, r + 1)
+                elif r - 1 < 0:
+                    y = np.arange(r, r + 2)
+                else:
+                    y = np.arange(r - 1, r + 2)
+                if c + 2 > np.size(map_array, axis=1) - 1:
+                    x = np.arange(c - 1, c + 1)
+                elif c - 1 < 0:
+                    x = np.arange(c, c + 2)
+                else:
+                    x = np.arange(c - 1, c + 2)
+                unexplored = 0
+                for num in y:
+                    for num2 in x:
+                        if map_array[num, num2] > 255:
+                            unexplored += 1
+                if unexplored > 1:
+                    pixel_list = np.append(pixel_list, np.array([[r, c,unexplored]]), axis=0)
+    return pixel_list
+
 
 if __name__ == '__main__':
     img = threshold('murrmatt.pgm')
