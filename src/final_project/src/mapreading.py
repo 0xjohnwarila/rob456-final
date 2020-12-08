@@ -69,7 +69,7 @@ def neighbors_explored(map_array, coordinates):
             if num == coordinates[0] and num2 == coordinates[1]:
                 continue
             else:
-                if map_array[num, num2] == 255:
+                if map_array[num, num2] > 1:
                     unoccupied = np.append(unoccupied, np.array([[num, num2]]), axis=0)
     return unoccupied
 
