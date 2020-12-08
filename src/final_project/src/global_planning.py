@@ -138,8 +138,9 @@ class GlobalPlanner:
         else:
             command.linear.x = 0.2
             command.angular.z = angle * .5
+
         # Stop the robot when position is reached
-        if total_distance < 1.4:
+        if total_distance < 1.0:
             command.linear.x = 0
             command.linear.z = 0
             self.redirect_ = 0
@@ -148,26 +149,36 @@ class GlobalPlanner:
 
         current_laser_theta = min_angle
         for i, scan in enumerate(distances):
-            half_angle = 60
+            half_angle = 45
             # This if statement basically checks to see if we're close to a
             # wall, then checks if that wall is within a 50 degree angle in
             # front of us and we're moving towards it. If all conditions are
             # satisfied then we do a hard left or right depending on whether
             # the wall is closer to the left or right front
-            if scan < 0.25:
+            if scan < 0.3:
+                # Obstacle in front
                 if 360 - half_angle < i < 360 and command.linear.x > 0:
                     print "***********DIVERT**********"
                     command.linear.x = -0.1
-                    command.angular.z = 5
+                    command.angular.z = 2.0
                     self.redirect_ += 1
                 elif 0 <= i < 0 + half_angle and command.linear.x > 0:
                     print "***********DIVERT**********"
                     command.linear.x = -0.1
-                    command.angular.z = -5
-                    self.redirect_ += 1
+                    command.angular.z = -2.0
+                    self.redirect_ += 1.0
+                # Obstacle to the left
+                elif half_angle < i < 180 - half_angle:
+                    command.angular.z = -1.0
+                # Obstacle to the right
+                elif 180 + half_angle < i < 360 - half_angle:
+                    command.angular.z = 1.0
+                # Obstacle behind
+                elif 180 - half_angle < 180 + half_angle:
+                    command.linear.x = .1
             current_laser_theta = current_laser_theta + angle_increment
 
-        if self.redirect_ > 10:
+        if self.redirect_ > 25:
             self.waypoints_ = []
             self.curr_waypoint_ = None
             self.redirect_ = 0
