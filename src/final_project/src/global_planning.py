@@ -71,6 +71,7 @@ class GlobalPlanner:
         self.redirect_ = 0
 
         self.count_ = 0
+        self.far_ = False
 
     def lidar_callback(self, msg):
         """
@@ -149,13 +150,13 @@ class GlobalPlanner:
 
         current_laser_theta = min_angle
         for i, scan in enumerate(distances):
-            half_angle = 45
+            half_angle = 48
             # This if statement basically checks to see if we're close to a
             # wall, then checks if that wall is within a 50 degree angle in
             # front of us and we're moving towards it. If all conditions are
             # satisfied then we do a hard left or right depending on whether
             # the wall is closer to the left or right front
-            if scan < 0.3:
+            if scan < 0.37:
                 # Obstacle in front
                 if 360 - half_angle < i < 360 and command.linear.x > 0:
                     print "***********DIVERT**********"
@@ -178,7 +179,8 @@ class GlobalPlanner:
                     command.linear.x = .1
             current_laser_theta = current_laser_theta + angle_increment
 
-        if self.redirect_ > 25:
+        if self.redirect_ > 10:
+            self.far_ = not self.far_
             self.waypoints_ = []
             self.curr_waypoint_ = None
             self.redirect_ = 0
@@ -331,8 +333,11 @@ class GlobalPlanner:
         boundary = mapreading.get_weighted_boundary_pixels(self.map_)
         distance = np.abs(boundary[:, 0] - self.coords_[0]) + np.abs(boundary[:, 1] - self.coords_[1])
         distance = np.sort(distance)
+        goal_distance = 2
+        if self.far_:
+            goal_distance = 10
         for i, dist in enumerate(distance):
-            if boundary[i, 2] > 4 and dist > 20:
+            if boundary[i, 2] > 4 and dist > goal_distance:
                 self.target_ = (boundary[i, 0], boundary[i, 1])
 
         return self.target_
