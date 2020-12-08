@@ -29,7 +29,7 @@ def live_threshold(data):
     for r in np.arange(np.size(extended_walls, axis=0)):
         for c in np.arange(np.size(extended_walls, axis=1)):
             if new_img[r, c] == 0:
-                extended_walls[max(r-1,0):min(r+2,y), max(c-1,0):min(c+2,x)] = 0
+                extended_walls[max(r-2,0):min(r+3,y), max(c-2,0):min(c+3,x)] = 0
     new_img[extended_walls == 0] = 0
     return new_img
     
@@ -59,12 +59,17 @@ def neighbors_explored(map_array, coordinates):
         x = np.arange(coordinates[1] - 1, coordinates[1] + 2)
     # Double for loop to iterate through all the pixels in the area of interest
     for num in y:
-        for num2 in x:
-            if num == coordinates[0] and num2 == coordinates[1]:
-                continue
-            else:
-                if map_array[num, num2] > 1:
-                    unoccupied = np.append(unoccupied, np.array([[num, num2]]), axis=0)
+        if num == coordinates[0]:
+            continue
+        else:
+            if map_array[num, coordinates[1]] > 1:
+                unoccupied = np.append(unoccupied, np.array([[num, coordinates[1]]]), axis=0)
+    for num in x:
+        if num == coordinates[1]:
+            continue
+        else:
+            if map_array[coordinates[0], num] > 1:
+                unoccupied = np.append(unoccupied, np.array([[coordinates[0], num]]), axis=0)
     return unoccupied
 
 
