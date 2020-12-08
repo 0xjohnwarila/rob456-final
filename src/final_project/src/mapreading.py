@@ -25,18 +25,12 @@ def live_threshold(data):
     new_img[data > 40] = 0
     new_img[data == -1] = np.inf
 
-    # extended_walls = np.full([y, x], 10)
-    # for r in np.arange(np.size(extended_walls, axis=0)):
-    #     for c in np.arange(np.size(extended_walls, axis=1)):
-    #         if new_img[r, c] == 0:
-    #             extended_walls[(r - 2): (r + 3), (c - 2): (c + 3)] = 0
-    # new_img[extended_walls == 0] = 0
-
-    #extended_walls = np.full([y,x], 1)
-    #extended_walls[new_img == 0] = 0
-    # For every px in new_img
-
-    # If it is a wall, make n neighbors out also be walls
+    extended_walls = np.full([y, x], 10)
+    for r in np.arange(np.size(extended_walls, axis=0)):
+        for c in np.arange(np.size(extended_walls, axis=1)):
+            if new_img[r, c] == 0:
+                extended_walls[max(r-1,0):min(r+2,y), max(c-1,0):min(c+2,x)] = 0
+    new_img[extended_walls == 0] = 0
     return new_img
     
 

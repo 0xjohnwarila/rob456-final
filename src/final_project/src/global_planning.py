@@ -273,29 +273,26 @@ class GlobalPlanner:
         :returns: None
         """
         # I really don't get it but apparently these are reversed? At least it works when I switch them
-        t = start
-        s = target
+        s = start
+        t = target
 
         points, parents, size = astar.astar(self.map_, s, t)
 
         # Do stuff with the path, like get the waypoints
         path = []
-        child = t
+        child = s
         i = 0
-        while child != s:
-            if i % 5 == 0:
+        while child != t:
+            if i % 5 == 0 or i == 0:
                 path.append(child)
             child = parents[child]
             i += 1
 
-        print len(path)
         # display with rviz
         for i, point in enumerate(path):
             tmp = self.np_to_rviz(point)
             path[i] = tmp
 
-        print "drawing points"
-        print path
         draw_points(path, self.viz_pub_)
         self.waypoints_ = path
 

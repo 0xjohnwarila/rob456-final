@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import mapreading  
 import heapq as hq
 
-def astar(m, start, target):
+def astar(m, target, start):
 
     # Setup data structures
 
@@ -69,13 +69,18 @@ if __name__ == '__main__':
     img2 = np.full([y, x], np.inf)
 
 
-    child = (174, 188)
-    target = (115, 90)
+    child = (115, 90)
+    target  = (174, 188)
+    path = []
+    i = 0
     while child != target:
-        img2[child[0]][child[1]] = new_img[child]
+        if i % 5 == 0 or i == 0:
+            path.append(child)
+            img2[child[0]][child[1]] = new_img[child]
         child = parents[child]
-        print child
+        i += 1
 
+    print path
     plt.imshow(img)
     plt.imshow(img2)
 
