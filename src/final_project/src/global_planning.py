@@ -73,6 +73,8 @@ class GlobalPlanner:
         self.count_ = 0
         self.far_ = False
 
+        self.three_point_ = 0
+
     def lidar_callback(self, msg):
         """
         Callback for the LIDAR subscriber.
@@ -154,7 +156,7 @@ class GlobalPlanner:
             # front of us and we're moving towards it. If all conditions are
             # satisfied then we do a hard left or right depending on whether
             # the wall is closer to the left or right front
-            if scan < 0.37:
+            if scan < 0.35:
                 # Obstacle in front
                 if 360 - half_angle < i < 360 and command.linear.x > 0:
                     print "***********DIVERT**********"
