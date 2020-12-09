@@ -29,7 +29,7 @@ def live_threshold(data):
     for r in np.arange(np.size(extended_walls, axis=0)):
         for c in np.arange(np.size(extended_walls, axis=1)):
             if new_img[r, c] == 0:
-                extended_walls[max(r-1,0):min(r+2,y), max(c-1,0):min(c+2,x)] = 0
+                extended_walls[max(r-3,0):min(r+4,y), max(c-3,0):min(c+4,x)] = 0
     new_img[extended_walls == 0] = 0
     return new_img
 

@@ -161,12 +161,12 @@ class GlobalPlanner:
                 if 360 - half_angle < i < 360 and command.linear.x > 0:
                     print "***********DIVERT**********"
                     command.linear.x = -0.1
-                    command.angular.z = 2.0
+                    command.angular.z = 1.0
                     self.redirect_ += 1
                 elif 0 <= i < 0 + half_angle and command.linear.x > 0:
                     print "***********DIVERT**********"
                     command.linear.x = -0.1
-                    command.angular.z = -2.0
+                    command.angular.z = -1.0
                     self.redirect_ += 1.0
                 # Obstacle to the left
                 elif half_angle < i < 180 - half_angle:
