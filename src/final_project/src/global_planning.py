@@ -72,6 +72,8 @@ class GlobalPlanner:
 
         self.count_ = 0
         self.far_ = False
+        self.error_ = False
+        self.error_count_ = 0
 
     def lidar_callback(self, msg):
         """
@@ -82,10 +84,6 @@ class GlobalPlanner:
         :returns: None
         """
         self.count_ += 1
-        # Check if we have a waypoint to navigate to
-        if self.curr_waypoint_ is None:
-            # Get the next waypoint
-            self.get_new_waypoint()
 
         command = Twist()
 
@@ -109,6 +107,25 @@ class GlobalPlanner:
         max_scan_length = msg.range_max
         distances = msg.ranges
         num_scans = len(distances)
+        
+        if self.error_:
+            if self.error_count_ > 0:
+                self.error_count_ -= 1
+                command.linear.x = 0.01
+                self.twist_pub_.publish(command)
+                return
+            else:
+                self.error_ = False
+                self.curr_waypoint_ = None
+                self.waypoints_ = []
+                
+
+        # Check if we have a waypoint to navigate to
+        if self.curr_waypoint_ is None:
+            # Get the next waypoint
+            ret = self.get_new_waypoint()
+            if ret is None:
+                return
 
         x_dist = self.curr_waypoint_[0] - self.odom_[0]
         y_dist = self.curr_waypoint_[1] - self.odom_[1]
@@ -234,7 +251,7 @@ class GlobalPlanner:
         
 
         # using 3 for the half radius cuz I don't want to calc that rn
-        self.map_ = mapreading.live_threshold(data)
+        self.map_ = mapreading.live_threshold(data, 1)
         # Trigger replan on new map
         # self.waypoints_ = []
 
@@ -276,29 +293,33 @@ class GlobalPlanner:
         :param: start: (x,y), target: (x,y)
         :returns: None
         """
-        # I really don't get it but apparently these are reversed? At least it works when I switch them
-        s = start
-        t = target
+        try:
+            s = start
+            t = target
 
-        points, parents, size = astar.astar(self.map_, s, t)
+            points, parents, size = astar.astar(self.map_, s, t)
 
-        # Do stuff with the path, like get the waypoints
-        path = []
-        child = s
-        i = 0
-        while child != t:
-            if i % 5 == 0 or i == 0:
-                path.append(child)
-            child = parents[child]
-            i += 1
+            # Do stuff with the path, like get the waypoints
+            path = []
+            child = s
+            i = 0
+            while child != t:
+                if i % 5 == 0 or i == 0:
+                    path.append(child)
+                child = parents[child]
+                i += 1
 
-        # display with rviz
-        for i, point in enumerate(path):
-            tmp = self.np_to_rviz(point)
-            path[i] = tmp
+            # display with rviz
+            for i, point in enumerate(path):
+                tmp = self.np_to_rviz(point)
+                path[i] = tmp
 
-        draw_points(path, self.viz_pub_)
-        self.waypoints_ = path
+            draw_points(path, self.viz_pub_)
+            self.waypoints_ = path
+        except:
+            print "PATH ERROR !!!!!!!!"
+            self.error_ = True
+            self.error_count = 30
 
     def get_new_waypoint(self):
         """
@@ -306,13 +327,16 @@ class GlobalPlanner:
         :returns: (x, y)
         """
 
-        if len(self.waypoints_) == 0:
+        if len(self.waypoints_) < 1:
             self.get_new_target()
             # If there are no remaining waypoints, get some new ones
             self.path_plan(self.coords_, self.target_)
-        self.curr_waypoint_ = self.waypoints_.pop(0)
-
-        return self.curr_waypoint_
+            
+        if len(self.waypoints_) > 0:
+            self.curr_waypoint_ = self.waypoints_.pop(0)
+            return self.curr_waypoint_
+        else:
+            return None
 
     def get_new_target(self):
         """
