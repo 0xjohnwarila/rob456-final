@@ -81,7 +81,7 @@ class GlobalPlanner:
         :param: msg: lidar msg
         :returns: None
         """
-        self.count_ += 1
+        self.redirect_ += 1
         # Check if we have a waypoint to navigate to
         if self.curr_waypoint_ is None:
             # Get the next waypoint
@@ -142,15 +142,13 @@ class GlobalPlanner:
 
         # Stop the robot when position is reached
         if total_distance < 1.0:
-            command.linear.x = 0
-            command.linear.z = 0
             self.redirect_ = 0
             self.get_new_waypoint()
             self.wait_ = 0
 
         current_laser_theta = min_angle
         for i, scan in enumerate(distances):
-            half_angle = 48
+            half_angle = 46
             # This if statement basically checks to see if we're close to a
             # wall, then checks if that wall is within a 50 degree angle in
             # front of us and we're moving towards it. If all conditions are
@@ -160,37 +158,45 @@ class GlobalPlanner:
                 # Obstacle in front
                 if 360 - half_angle < i < 360 and command.linear.x > 0:
                     print "***********DIVERT**********"
-                    command.linear.x = -0.1
-                    command.angular.z = 2.0
+                    command.linear.x = -0.2
+                    command.angular.z = 1.0
                     self.redirect_ += 1
                 elif 0 <= i < 0 + half_angle and command.linear.x > 0:
                     print "***********DIVERT**********"
-                    command.linear.x = -0.1
-                    command.angular.z = -2.0
+                    command.linear.x = -0.2
+                    command.angular.z = -1.0
                     self.redirect_ += 1.0
                 # Obstacle to the left
                 elif half_angle < i < 180 - half_angle:
-                    self.redirect_ += 1.0
-                    command.angular.z = -1.0
+                    command.angular.z = -0.5
                 # Obstacle to the right
                 elif 180 + half_angle < i < 360 - half_angle:
-                    self.redirect_ += 1.0
-                    command.angular.z = 1.0
+                    command.angular.z = 0.5
                 # Obstacle behind
                 elif 180 - half_angle < 180 + half_angle:
-                    command.linear.x = .1
+                    command.linear.x = .2
+                    self.redirect_ += 1
             current_laser_theta = current_laser_theta + angle_increment
 
-        if self.redirect_ > 25:
-            self.far_ = not self.far_
-            self.waypoints_ = []
-            self.curr_waypoint_ = None
-            self.redirect_ = 0
-
-        if self.wait_ > 0:
-            self.wait_ -= 1
-            command.linear.x = 0
-            command.angular.z = 0
+        if self.redirect_ > 75:
+            if self.three_point_ == 2:
+                command.linear.x = 0.4
+                command.angular.z = 0.0
+                self.three_point_ = False
+                self.redirect_ = 0
+                self.far_ = not self.far_
+                self.waypoints_ = []
+                self.curr_waypoint_ = None
+                self.redirect_ = 0
+                self.three_point_ = 0
+            elif self.three_point_ == 1:
+                command.linear.x = 0.0
+                command.angular.z = .5
+                self.three_point_ = 2
+            else:
+                command.linear.x = -0.6
+                command.angular.z = 0.0
+                self.three_point_ = 1
         
         """
         if self.count_ > 100:
@@ -252,10 +258,10 @@ class GlobalPlanner:
         :param point: (r, c) coordinate
         :return: (x, y) coordinate shifted and flipped along the y axis
         """
-        x_shift = np.size(self.map_, axis=1) / 2 - 1
-        y_shift = np.size(self.map_, axis=0) / 2 - 1
-        new_x = (point[1] - x_shift) * self.resolution_
-        new_y = (point[0] - y_shift) * self.resolution_
+        x_shift = np.size(self.map_, axis=1) / 2
+        y_shift = np.size(self.map_, axis=0) / 2
+        new_x = (point[1] - 1 - x_shift) * self.resolution_
+        new_y = (point[0] - 1 - y_shift) * self.resolution_
         return (new_x, -new_y)
 
     def rviz_to_np(self, point):
@@ -264,11 +270,11 @@ class GlobalPlanner:
         :param point: rviz coordinate (x, y)
         :return: np coordinate (r, c)
         """
-        r_shift = np.size(self.map_, axis=0) / 2 - 1
-        c_shift = np.size(self.map_, axis=1) / 2 - 1
+        r_shift = np.size(self.map_, axis=0) / 2
+        c_shift = np.size(self.map_, axis=1) / 2
         new_r = -point[1] / self.resolution_ + r_shift
         new_c = point[0] / self.resolution_ + c_shift
-        return (int(new_r), int(new_c))
+        return (int(np.ceil(new_r)), int(np.ceil(new_c)))
 
     def path_plan(self, start, target):
         """
