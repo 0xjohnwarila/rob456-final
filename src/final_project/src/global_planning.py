@@ -170,16 +170,18 @@ class GlobalPlanner:
                     self.redirect_ += 1.0
                 # Obstacle to the left
                 elif half_angle < i < 180 - half_angle:
+                    self.redirect_ += 1.0
                     command.angular.z = -1.0
                 # Obstacle to the right
                 elif 180 + half_angle < i < 360 - half_angle:
+                    self.redirect_ += 1.0
                     command.angular.z = 1.0
                 # Obstacle behind
                 elif 180 - half_angle < 180 + half_angle:
                     command.linear.x = .1
             current_laser_theta = current_laser_theta + angle_increment
 
-        if self.redirect_ > 10:
+        if self.redirect_ > 25:
             self.far_ = not self.far_
             self.waypoints_ = []
             self.curr_waypoint_ = None

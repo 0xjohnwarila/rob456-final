@@ -34,7 +34,8 @@ def astar(m, target, start):
             return points, parents, i
 
         # get neighbors
-        neighbors = mapreading.neighbors_explored(m, curr[1])
+        # neighbors = mapreading.neighbors_explored(m, curr[1])
+        neighbors = mapreading.neighbors_open(m, curr[1])
         for n in neighbors:
             neighbor = (n[0], n[1])
             if neighbor in closed:
@@ -55,7 +56,6 @@ def astar(m, target, start):
                 parents[neighbor] = curr[1]
 
     return points, parents, i
-
 
 if __name__ == '__main__':
     img = mapreading.threshold('murrmatt.pgm')

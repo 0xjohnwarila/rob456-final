@@ -21,19 +21,17 @@ def live_threshold(data):
     y = np.size(data, axis=0)
     x = np.size(data, axis=1)
     new_img = np.full([y, x], np.inf)
-    new_img[data < 41] = 255
-    new_img[data > 40] = 0
+    new_img[data < 31] = 255
+    new_img[data > 30] = 0
     new_img[data == -1] = np.inf
 
     extended_walls = np.full([y, x], 10)
     for r in np.arange(np.size(extended_walls, axis=0)):
         for c in np.arange(np.size(extended_walls, axis=1)):
             if new_img[r, c] == 0:
-                extended_walls[max(r-2,0):min(r+3,y), max(c-2,0):min(c+3,x)] = 0
+                extended_walls[max(r-1,0):min(r+2,y), max(c-1,0):min(c+2,x)] = 0
     new_img[extended_walls == 0] = 0
     return new_img
-    
-
 
 def neighbors_explored(map_array, coordinates):
     """
@@ -72,6 +70,17 @@ def neighbors_explored(map_array, coordinates):
                 unoccupied = np.append(unoccupied, np.array([[coordinates[0], num]]), axis=0)
     return unoccupied
 
+def neighbors_open(m, pos):
+    r_n = np.size(m, axis=0)
+    c_n = np.size(m, axis=1)
+    ret = np.empty((0,2), int)
+    for r in range(max(pos[0]-1,0),min(pos[0]+2,r_n)):
+        for c in range(max(pos[1]-1,0),min(pos[1]+2,c_n)):
+            if pos[0] == r and pos[1] == c:
+                continue
+            if m[r][c] != 0:
+                ret = np.append(np.array([[r,c]]), ret, axis=0)
+    return ret
 
 def get_boundary_pixels(map_array):
     """
@@ -146,15 +155,19 @@ if __name__ == '__main__':
                            [0, 383],
                            [383, 383],
                            [77, 163],
-                           [383, 0]])
+                           [383, 0],
+                           [1,1]])
     test1 = neighbors_explored(img, test_points[0, :])
     test2 = neighbors_explored(img, test_points[1, :])
     test3 = neighbors_explored(img, test_points[2, :])
     test4 = neighbors_explored(img, test_points[3, :])
     test5 = neighbors_explored(img, test_points[4, :])
+
+    test6 = neighbors_open(img, test_points[5, :])
     print test1
     print test2
     print test3
     print test4
+    print test6
     plt.imshow(img)
     plt.show()
