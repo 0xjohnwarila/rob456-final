@@ -184,7 +184,6 @@ class GlobalPlanner:
             if self.three_point_ == 2:
                 command.linear.x = 0.4
                 command.angular.z = 0.0
-                self.three_point_ = False
                 self.redirect_ = 0
                 self.far_ = not self.far_
                 self.waypoints_ = []
